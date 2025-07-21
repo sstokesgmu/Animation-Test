@@ -1,6 +1,3 @@
-Here’s a more polished version of that README section:
-
----
 
 ## Paid Assets
 
@@ -14,4 +11,3 @@ This project uses the following paid assets from the Unity Asset Store:
   A versatile collection of low‑poly models and environments perfect for prototyping.
   [https://assetstore.unity.com/packages/essentials/tutorial-projects/polygon-prototype-low-poly-3d-art-by-synty-137126](https://assetstore.unity.com/packages/essentials/tutorial-projects/polygon-prototype-low-poly-3d-art-by-synty-137126)
 
----
