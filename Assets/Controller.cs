@@ -84,7 +84,7 @@ public class Controller : MonoBehaviour
             float angle = Mathf.Atan2(inputVector.x, inputVector.z) * Mathf.Rad2Deg;
             // Apply rotation around the Y axis
             transform.rotation = Quaternion.Euler(0, angle, 0);
-            Debug.Log(transform.rotation);
+            //Debug.Log(transform.rotation);
         }
     }
 

@@ -17,6 +17,7 @@ public class Item : MonoBehaviour, IPushable
             Debug.DrawRay(other.collider.bounds.center, pushVector.normalized * 2f, Color.green);
             rb.constraints = RigidbodyConstraints.FreezeRotation;
             rb.AddForce(pushVector.normalized * 2f, ForceMode.Impulse);
+            Debug.Log($"Actor: {other.gameObject.name} push me: {this.name}");
         }
     }
     void FixedUpdate()
