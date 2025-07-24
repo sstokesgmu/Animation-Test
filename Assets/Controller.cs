@@ -27,7 +27,7 @@ public class Controller : MonoBehaviour
     public AnimatorParameters animatorParameters;
     private Rigidbody rb;
 
-    StateMachine machine;
+
     private Vector3 lastLookDirection;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
 
@@ -56,11 +56,9 @@ public class Controller : MonoBehaviour
 
     void Start()
     {
-        move.action.Enable();
-        sprint.action.Enable();
-        machine = new StateMachine();
+       
         
-        MoveState state = new MoveState(10f);
+      
     }
     // Update is called once per frame
     void FixedUpdate()
