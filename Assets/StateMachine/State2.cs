@@ -1,13 +1,10 @@
 using System.Collections.Generic;
 using System;
 using UnityEngine;
-using NUnit.Framework;
-using UnityEngine.Animations;
-using StateMachineHelper;
-using Unity.Mathematics;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 
-namespace StateMachineHelper{
+namespace GraphHelper{
 
     public struct EdgeTransition
     {
@@ -18,42 +15,58 @@ namespace StateMachineHelper{
     {
         //If parent is null then 
         public Node parent = null;
+
+        public string name = "";
         public IStatable value = null; //Make this type unspecific 
         public Dictionary<string,Node> children = new Dictionary<string,Node>();
         public List<EdgeTransition> transitionList = new List<EdgeTransition>();
-        
-        
+
+
         //!Rewrite the arguments
         public Node(Node parent = null, string name = null, IStatable value = null)
         {
             //So the node tells the parent it is a child of it?
             this.parent = parent;
             this.value = value;
+            this.name = name;
             if (parent != null)
-                parent.children[name] = this; //! Notice the Child is telling the parent "I am yor child"
+            {
+                Debug.Log($"The child has a parent called: {parent.name}");
+
+                //TODO: Where do we want to add the child in the constructor or as a Fluent Method
+                // parent.children[name] = this; //! Notice the Child is telling the parent "I am yor child"
+            }
+            else
+            {
+                Debug.Log($"The node is the root node: {this.name}");
+            }
+                
         }
-        public Node GetParent() => parent;
+        public Node GetParent() => this.parent;
+        public string GetName() => this.name;
         //public Node GetChildren() => children;
 
-        public void AddTransionToList(Node source,Node targetNode, Func<bool> condition)
+        public void AddTransionToList(Node source, Node targetNode, Func<bool> condition)
         {
             EdgeTransition newTransition;
             newTransition.condition = condition;
-            newTransition.targetNode = targetNode; 
+            newTransition.targetNode = targetNode;
             source.transitionList.Add(newTransition);
         }
         //If the value is not a primative 
 
 
         //Look through conditions and see if the conditions in the transition list return true
+        //TODO: Figure out when do keeping track of where we are on the graph
         public Node GetNextNode()
         {
             foreach (EdgeTransition possibleTrans in transitionList)
             {
                 if (possibleTrans.condition())
                 {
+                    Debug.Log($"Transition condition met: {possibleTrans.targetNode.name}");
                     //Go to the next transition seen that to the graph/StateMachine 
-                    return possibleTrans.targetNode;
+                   // return possibleTrans.targetNode;
 
                 }
             }
@@ -63,17 +76,63 @@ namespace StateMachineHelper{
 
     public class Graph
     {
-        private static readonly Func<bool> ALWAYSTRUE = () => true;
+       //TODO: What does this do -> private static readonly Func<bool> ALWAYSTRUE = () => true;
         public Node root;
         //Traversals or searches 
+        
+        public void PrintGraph(Node startNode = null)
+        {
+            if (startNode == null) startNode = root;
+            if (startNode == null) 
+            {
+                Debug.Log("Graph is empty - no root node set");
+                return;
+            }
+            
+            Debug.Log("=== GRAPH STRUCTURE ===");
+            PrintNodeRecursive(startNode, 0);
+            Debug.Log("=== END GRAPH ===");
+        }
+        
+        private void PrintNodeRecursive(Node node, int depth)
+        {
+            if (node == null) return;
+            
+            string indent = new string(' ', depth * 2);
+            Debug.Log($"{indent}Node: {node.name} (Type: {node.value?.GetType().Name})");
+            
+            // Print transitions
+            if (node.transitionList.Count > 0)
+            {
+                Debug.Log($"{indent}  Transitions:");
+                foreach (var transition in node.transitionList)
+                {
+                    Debug.Log($"{indent}    -> {transition.targetNode.name}");
+                }
+            }
+            
+            // Print children
+            if (node.children.Count > 0)
+            {
+                Debug.Log($"{indent}  Children:");
+                foreach (var child in node.children)
+                {
+                    PrintNodeRecursive(child.Value, depth + 2);
+                }
+            }
+        }
     }
 
     public interface IGraphBuilder
     {
-        public Node SelectParent(Node parent);
+        public IGraphBuilder AscendToParent(Node currentNode);
         public IGraphBuilder AddChild(Node parent, Node Child, string childName);
-        public Node AddTransition(Node source, Node target, Func<bool> condition = null);
-        public IGraphBuilder SetToNextNodeInLininage(Node parent, string childName);
+        public IGraphBuilder AddTransition(Node source, Node target, Func<bool> condition = null);
+        public IGraphBuilder AddTransition<T>(Node source, Node target, Func<T, bool> condition, T parameter);
+        public IGraphBuilder AddTransition<T>(Node source, Node target, Func<T, bool> condition, ref T parameter);
+        public IGraphBuilder AddTransition<T1, T2>(Node source, Node target, Func<T1, T2, bool> condition, T1 param1, T2 param2);
+        public IGraphBuilder DescendToChild(Node parent, string childName);
+
         public Graph Generate();
 
     }
@@ -81,23 +140,33 @@ namespace StateMachineHelper{
     public class GraphBuilder : IGraphBuilder
     {
         private Graph graph = new Graph();
+
+        public Node root = null;
         private Node currentNode = null;
-        public static IGraphBuilder Create() => new GraphBuilder(); //? What is this 
-
-        public Node SelectParent(Node parent)
+        GraphBuilder(Node root)
         {
-            graph.root = parent;
-            return parent;
+            this.root = root;
+            this.currentNode = root;
+            
         }
-
+        public static IGraphBuilder Create(Node root) => new GraphBuilder(root); //? What is this and can I setup the current node in this static method
+    
+        public IGraphBuilder AscendToParent(Node currentNode)
+        {
+            //! If the parent equals null then we are at the root of the graph 
+            this.currentNode = currentNode?.parent ?? currentNode;
+            return this;
+        } 
         public IGraphBuilder AddChild(Node parent, Node child, string childName)
         {
-            parent.children.Add(childName, child);
+            Debug.Log($"Adding the child name {childName}");
+            currentNode.children.Add(childName, child);
             this.currentNode = parent;
+
             return this;
         }
 
-        public IGraphBuilder SetToNextNodeInLininage(Node parent, string childName)
+        public IGraphBuilder DescendToChild(Node parent, string childName)
         {
             Dictionary<string, Node> _nodeLookup = parent.children;
             if (_nodeLookup.Count != 0)
@@ -105,41 +174,56 @@ namespace StateMachineHelper{
                 Node childNode = null;
                 if (_nodeLookup.TryGetValue(childName, out childNode))
                     this.currentNode = childNode;
+                else //? How do I handle this do we keep going with the method chaining
+                    Debug.LogWarning($"The name {childName} does not exist on the current graph");
                 return this;
             }
             else
-                return this;
-            //else return null -> huge error can we do a graceful bail out        
+                return this;    
         }
 
-        //How are you envisioning this, where are you in the graph when you call this 
-
-
-
-
-        public Node AddTransition(Node source, Node target, Func<bool> condition = null)
+        public IGraphBuilder AddTransition(Node source, Node target, Func<bool> condition = null)
         {
             condition ??= () => true;
             source.AddTransionToList(source, target, condition);
-            return source.parent;//!This is not right an scary 
+            return this; 
+        }
+        
+        // Overload for functions with one parameter
+        public IGraphBuilder AddTransition<T>(Node source, Node target, Func<T, bool> condition, T parameter)
+        {
+            // Convert parameterized function to parameterless by capturing the parameter
+            Func<bool> parameterlessCondition = () => condition(parameter);
+            source.AddTransionToList(source, target, parameterlessCondition);
+            return this;
+        }
+        
+        // Overload for functions with ref parameter (acts like a pointer)
+        public IGraphBuilder AddTransition<T>(Node source, Node target, Func<T, bool> condition, ref T parameter)
+        {
+            // Capture the reference to the parameter
+            Func<bool> parameterlessCondition = () => condition(parameter);
+            source.AddTransionToList(source, target, parameterlessCondition);
+            return this;
+        }
+        
+        // Overload for functions with two parameters
+        public IGraphBuilder AddTransition<T1, T2>(Node source, Node target, Func<T1, T2, bool> condition, T1 param1, T2 param2)
+        {
+            Func<bool> parameterlessCondition = () => condition(param1, param2);
+            source.AddTransionToList(source, target, parameterlessCondition);
+            return this;
         }
         public Graph Generate()
         {
+            //graph.root = root;
             return graph;
         }
     } 
 }
 
-
-
-public interface IStatable
-{
-    void Enter();
-    void Execute();
-    void Exit();
-}
-
-public class IsGrounded: IStatable
+namespace Locomotion_States {
+    public class IsGrounded: IStatable
 {
     public void Enter()
     {
@@ -157,25 +241,43 @@ public class IsGrounded: IStatable
     }
 }
 
-public class IsInAir: IStatable
+public class IsInAir : IStatable
 {
     public void Enter()
     {
         Debug.Log("IsInAir: Entering in-air state");
     }
-    
+
     public void Execute()
     {
         Debug.Log("IsInAir: Executing in-air state logic");
     }
-    
+
     public void Exit()
     {
         Debug.Log("IsInAir: Exiting in-air state");
     }
 }
 
-public class Walk : IStatable {
+public class Idle : IStatable
+{
+    public void Enter()
+    {
+        Debug.Log("Entering the Idle State");
+    }
+    public void Execute()
+    {
+        Debug.Log("Executing inside the Idle State");
+    }
+
+    public void Exit()
+    {
+        Debug.Log("Exiting the Idle State");
+    }
+}
+
+public class Walk : IStatable
+{
     public void Enter()
     {
 
@@ -190,21 +292,30 @@ public class Walk : IStatable {
     }
 }
 
-
-public class StateMachine : MonoBehaviour
+public class Run : IStatable
 {
-    //Context State - Root States is groundend is Inair
-    void Awake()
+    public void Enter()
     {
-
-        Node IsGrounded = new Node(null, "isGrounded", new IsGrounded());
-        Graph groundedGraph = GraphBuilder.Create()
-                    .AddChild(IsGrounded, new Node(IsGrounded, "Walk", new Walk()), "Walk")
-                    .SetToNextNodeInLininage(IsGrounded, "Walk")
-                    .Generate();
-                    
+        Debug.Log("Entering the Run State");
     }
-    //Tick -> how long we are in the state for 
-
-    //Hold a ref to the paramters that the character needs 
+    public void Execute()
+    {
+        Debug.Log("Executing the Running State");
+    }
+    public void Exit()
+    {
+        Debug.Log("Exiting the Running State");
+    }
 }
+}
+
+
+public interface IStatable
+{
+    void Enter();
+    void Execute();
+    void Exit();
+}
+
+
+// public class StateMachine : MonoBehaviour
