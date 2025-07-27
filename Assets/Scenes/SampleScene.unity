@@ -505,11 +505,6 @@ CapsuleCollider:
   m_Height: 1.9432273
   m_Direction: 1
   m_Center: {x: 0, y: 0.8510344, z: 0}
---- !u!95 &381346362 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 2faa610713d3b3c439473daa55e8c60a, type: 3}
-  m_PrefabInstance: {fileID: 1895312961}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &381346363 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2faa610713d3b3c439473daa55e8c60a, type: 3}
@@ -524,16 +519,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 381346358}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 33f4bf2377a5acb489c593fff01bfc0e, type: 3}
+  m_Script: {fileID: 11500000, guid: fbfbf83dde52d17409520956c9312812, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  move: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  sprint: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  jump: {fileID: 0}
-  mesh: {fileID: 863400094}
-  anim: {fileID: 381346362}
-  cam: {fileID: 1344377805}
-  animatorParameters: {fileID: 11400000, guid: 1e032426917ef2b49b5e070149800f8b, type: 2}
+  speed: 0
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -704,11 +693,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &863400094 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8382477316637108303, guid: 2faa610713d3b3c439473daa55e8c60a, type: 3}
-  m_PrefabInstance: {fileID: 1895312961}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1277959939
 GameObject:
   m_ObjectHideFlags: 0

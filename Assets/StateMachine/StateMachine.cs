@@ -26,9 +26,9 @@ public class StateMachine : MonoBehaviour
 
         GroundedGraph = GraphBuilder.Create(IsGrounded)
                                         .AddChild(IsGrounded, WalkNode, "Walk")
-                                            .AddTransition(IsGrounded, WalkNode, (int s) => s < 5, speed) // Walk if speed < 5 (using ref)
+                                            .AddTransition(IsGrounded, WalkNode,  (s) => s < 5, ()=>speed) // Walk if speed < 5 (using ref)
                                         .AddChild(IsGrounded, RunNode, "Run")
-                                            .AddTransition(IsGrounded, RunNode, (int s) => s >= 5,  speed) // Run if speed >= 5 (using ref)
+                                            .AddTransition(IsGrounded, RunNode,  (s) => s >= 5,  ()=>speed) // Run if speed >= 5 (using ref)
                                             .Generate();
         GroundedGraph.root = IsGrounded;
        // GroundedGraph.PrintGraph();

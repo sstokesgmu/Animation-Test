@@ -128,9 +128,8 @@ namespace GraphHelper{
         public IGraphBuilder AscendToParent(Node currentNode);
         public IGraphBuilder AddChild(Node parent, Node Child, string childName);
         public IGraphBuilder AddTransition(Node source, Node target, Func<bool> condition = null);
-        public IGraphBuilder AddTransition<T>(Node source, Node target, Func<T, bool> condition, T parameter);
-        public IGraphBuilder AddTransition<T>(Node source, Node target, Func<T, bool> condition, ref T parameter);
-        public IGraphBuilder AddTransition<T1, T2>(Node source, Node target, Func<T1, T2, bool> condition, T1 param1, T2 param2);
+        public IGraphBuilder AddTransition<T>(Node source, Node target, Func<T, bool> condition, Func<T> parameter1);
+        public IGraphBuilder AddTransition<T1, T2>(Node source, Node target, Func<T1, T2, bool> condition, Func<T1> parameter1, Func<T2> parameter2);
         public IGraphBuilder DescendToChild(Node parent, string childName);
 
         public Graph Generate();
@@ -190,27 +189,19 @@ namespace GraphHelper{
         }
         
         // Overload for functions with one parameter
-        public IGraphBuilder AddTransition<T>(Node source, Node target, Func<T, bool> condition, T parameter)
+        public IGraphBuilder AddTransition<T>(Node source, Node target, Func<T, bool> condition, Func<T> parameterProvider)
         {
             // Convert parameterized function to parameterless by capturing the parameter
-            Func<bool> parameterlessCondition = () => condition(parameter);
+            Func<bool> parameterlessCondition = () => condition(parameterProvider());
             source.AddTransionToList(source, target, parameterlessCondition);
             return this;
         }
         
-        // Overload for functions with ref parameter (acts like a pointer)
-        public IGraphBuilder AddTransition<T>(Node source, Node target, Func<T, bool> condition, ref T parameter)
-        {
-            // Capture the reference to the parameter
-            Func<bool> parameterlessCondition = () => condition(parameter);
-            source.AddTransionToList(source, target, parameterlessCondition);
-            return this;
-        }
         
         // Overload for functions with two parameters
-        public IGraphBuilder AddTransition<T1, T2>(Node source, Node target, Func<T1, T2, bool> condition, T1 param1, T2 param2)
+        public IGraphBuilder AddTransition<T1, T2>(Node source, Node target, Func<T1, T2, bool> condition, Func<T1> paramProvider1, Func<T2> paramProvider2)
         {
-            Func<bool> parameterlessCondition = () => condition(param1, param2);
+            Func<bool> parameterlessCondition = () => condition(paramProvider1(), paramProvider2());
             source.AddTransionToList(source, target, parameterlessCondition);
             return this;
         }
