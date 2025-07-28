@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using System;
 using UnityEngine;
-using System.Runtime.InteropServices.WindowsRuntime;
+using UnityEngine.InputSystem;
+using UnityEngine.Lumin;
+
+using static StateEvents;
 
 
 namespace GraphHelper{
@@ -65,8 +68,9 @@ namespace GraphHelper{
                 if (possibleTrans.condition())
                 {
                     Debug.Log($"Transition condition met: {possibleTrans.targetNode.name}");
+
                     //Go to the next transition seen that to the graph/StateMachine 
-                   // return possibleTrans.targetNode;
+                   return possibleTrans.targetNode;
 
                 }
             }
@@ -78,6 +82,7 @@ namespace GraphHelper{
     {
        //TODO: What does this do -> private static readonly Func<bool> ALWAYSTRUE = () => true;
         public Node root;
+        public Node currentNode;
         //Traversals or searches 
         
         public void PrintGraph(Node startNode = null)
@@ -93,14 +98,14 @@ namespace GraphHelper{
             PrintNodeRecursive(startNode, 0);
             Debug.Log("=== END GRAPH ===");
         }
-        
+
         private void PrintNodeRecursive(Node node, int depth)
         {
             if (node == null) return;
-            
+
             string indent = new string(' ', depth * 2);
             Debug.Log($"{indent}Node: {node.name} (Type: {node.value?.GetType().Name})");
-            
+
             // Print transitions
             if (node.transitionList.Count > 0)
             {
@@ -110,7 +115,7 @@ namespace GraphHelper{
                     Debug.Log($"{indent}    -> {transition.targetNode.name}");
                 }
             }
-            
+
             // Print children
             if (node.children.Count > 0)
             {
@@ -120,7 +125,23 @@ namespace GraphHelper{
                     PrintNodeRecursive(child.Value, depth + 2);
                 }
             }
+
         }
+        public void Update()
+            {
+                if (currentNode == null)
+                    currentNode = root;
+
+                //! Now this op seems to only work on transitions inside graphs (node to node) but not graph to graph 
+                Node nextNode = currentNode?.GetNextNode();
+                if (nextNode != null && nextNode != currentNode)
+                {
+                    Debug.Log($"Transitioning from {currentNode.name} to {nextNode.name}");
+                    currentNode = nextNode;
+                    (currentNode.value as IStatable)?.Enter();
+                }
+            }
+        
     }
 
     public interface IGraphBuilder
@@ -167,6 +188,8 @@ namespace GraphHelper{
 
         public IGraphBuilder DescendToChild(Node parent, string childName)
         {
+
+            Debug.LogWarning("Hello");
             Dictionary<string, Node> _nodeLookup = parent.children;
             if (_nodeLookup.Count != 0)
             {
@@ -219,6 +242,7 @@ namespace Locomotion_States {
     public void Enter()
     {
         Debug.Log("IsGrounded: Entering grounded state");
+        NotifyStateChange("Grounded");
     }
     
     public void Execute()
@@ -252,6 +276,7 @@ public class IsInAir : IStatable
 
 public class Idle : IStatable
 {
+    
     public void Enter()
     {
         Debug.Log("Entering the Idle State");
@@ -271,8 +296,8 @@ public class Walk : IStatable
 {
     public void Enter()
     {
-
-    }
+            NotifyStateChange("Walking");
+        }
     public void Execute()
     {
 
@@ -307,6 +332,5 @@ public interface IStatable
     void Execute();
     void Exit();
 }
-
 
 // public class StateMachine : MonoBehaviour

@@ -1,19 +1,35 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Cinemachine;
+using Locomotion_States;
+using GraphHelper;
 //-------------------------------------------------------------------
 /*
     Base Class for player and enemies
     Handle animations 
 */
 //--------------------------------------S~----------------------------
+
+public struct
+StateData<T> where T : class
+{
+    public AnimatorParameters animParams;
+    public T dataRef;
+
+    public StateData(T dataRefernce, AnimatorParameters animatorParams)
+    {
+        this.dataRef = dataRefernce;
+        this.animParams = animatorParams;
+        Debug.Log($"The data ref is {dataRef} of type {typeof(T)}");
+    }
+}
+
+
 public class Controller : MonoBehaviour
 {
 
     public InputActionReference move;
     public InputActionReference sprint;
-    
-    
     public InputActionReference jump;
     public GameObject mesh; //? Question to get the forward vector of where the player is facing should I use a component or another gameobject
 
@@ -26,7 +42,7 @@ public class Controller : MonoBehaviour
 
     public AnimatorParameters animatorParameters;
     private Rigidbody rb;
-
+    
 
     private Vector3 lastLookDirection;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -34,6 +50,15 @@ public class Controller : MonoBehaviour
     Vector2 input;
     bool isWalking;
     bool isRunning;
+
+    private StateData<Controller> controllerData;
+    private StateMachine stateMachine;
+
+    private Node isGrounded;
+    private Node isInAir;
+
+    private Graph groundedGraph;
+
 
 
 
@@ -52,13 +77,30 @@ public class Controller : MonoBehaviour
             isWalking = false;
         };
         sprint.action.performed += context => isRunning = context.ReadValueAsButton();
+
+        controllerData = new StateData<Controller>(this, animatorParameters);
+
     }
 
     void Start()
     {
-       
-        
-      
+
+        isGrounded = new Node(null, "isGrounded", new IsGrounded());    
+        Node WalkNode = new Node(isGrounded, "Walk", new Walk());
+        Node RunNode = new Node(isGrounded, "Run", new Run());
+
+        groundedGraph = GraphBuilder.Create(isGrounded)
+                    .AddChild(isGrounded, WalkNode, "Walk")
+                        //! GetInputVector is a Data Provider Function
+                        .AddTransition(isGrounded, WalkNode, (param) => param != Vector3.zero, () => GetInputVector())
+                        .DescendToChild(isGrounded, "Walk")
+                            .AddTransition(WalkNode, isGrounded, (param) => param == Vector3.zero, () => GetInputVector())
+                        .Generate();
+
+        groundedGraph.root = isGrounded;
+
+
+
     }
     // Update is called once per frame
     void FixedUpdate()
@@ -68,8 +110,9 @@ public class Controller : MonoBehaviour
 
         //Rotation Handling 
         Vector3 inputVector = GetInputVector().normalized;
-  
+
         //Todo: State Machine Class
+        groundedGraph.Update();
 
         //Movement Handling 
         Vector3 res = DrawCameraRay();
@@ -153,23 +196,23 @@ public class Controller : MonoBehaviour
     }
     Vector3 GetInputVector()
     {
-    // 1) Flatten camera forward/right to XZ plane
-    Transform camT = Camera.main.transform;
-    Vector3 camForward = camT.forward;
-    camForward.y = 0f;
-    camForward.Normalize();
+        // 1) Flatten camera forward/right to XZ plane
+        Transform camT = Camera.main.transform;
+        Vector3 camForward = camT.forward;
+        camForward.y = 0f;
+        camForward.Normalize();
 
-    Vector3 camRight = camT.right;
-    camRight.y = 0f;
-    camRight.Normalize();
+        Vector3 camRight = camT.right;
+        camRight.y = 0f;
+        camRight.Normalize();
 
-    // 2) Read raw 2D input (x = A/D or left stick X, y = W/S or left stick Y)
-    Vector2 input2D = move.action.ReadValue<Vector2>();
+        // 2) Read raw 2D input (x = A/D or left stick X, y = W/S or left stick Y)
+        Vector2 input2D = move.action.ReadValue<Vector2>();
 
-    // 3) Build world‑space move vector
-    Vector3 worldMove = camForward * input2D.y + camRight * input2D.x;
+        // 3) Build world‑space move vector
+        Vector3 worldMove = camForward * input2D.y + camRight * input2D.x;
 
-    return worldMove;
+        return worldMove;
     }
 
 }

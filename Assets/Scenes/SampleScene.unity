@@ -519,10 +519,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 381346358}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fbfbf83dde52d17409520956c9312812, type: 3}
+  m_Script: {fileID: 11500000, guid: 33f4bf2377a5acb489c593fff01bfc0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 0
+  move: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  sprint: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  jump: {fileID: 0}
+  mesh: {fileID: 0}
+  anim: {fileID: 381346365}
+  cam: {fileID: 1344377805}
+  animatorParameters: {fileID: 11400000, guid: dd729103250cb03459869e9b92f76f31, type: 2}
+--- !u!95 &381346365 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 2faa610713d3b3c439473daa55e8c60a, type: 3}
+  m_PrefabInstance: {fileID: 1895312961}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0

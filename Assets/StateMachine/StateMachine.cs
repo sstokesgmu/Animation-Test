@@ -9,8 +9,6 @@ public class StateMachine : MonoBehaviour
     void Awake()
     {
         //! Important  -> create all the roots(SuperStates) you think you would need first
-      
-
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -18,8 +16,6 @@ public class StateMachine : MonoBehaviour
     {
         Node IsGrounded = new Node(null, "isGrounded", new IsGrounded());
         Node IsInAir = new Node(null, "isInAir", new IsInAir());
-
-
         Node WalkNode = new Node(IsGrounded, "Walk", new Walk());
         Node RunNode = new Node(IsGrounded, "Run", new Run());
         Debug.Log("Creating the Graph");
@@ -31,7 +27,7 @@ public class StateMachine : MonoBehaviour
                                             .AddTransition(IsGrounded, RunNode,  (s) => s >= 5,  ()=>speed) // Run if speed >= 5 (using ref)
                                             .Generate();
         GroundedGraph.root = IsGrounded;
-       // GroundedGraph.PrintGraph();
+       
 
         Debug.Log("=== Individual Nodes ===");
         Debug.Log($"IsGrounded child count: {IsGrounded.children.Count}");
@@ -41,9 +37,7 @@ public class StateMachine : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
         GroundedGraph.root.GetNextNode();
         speed++;
-
     }
 }
