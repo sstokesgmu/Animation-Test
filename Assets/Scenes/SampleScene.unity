@@ -132,7 +132,7 @@ GameObject:
   - component: {fileID: 12960978}
   - component: {fileID: 12960977}
   - component: {fileID: 12960981}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Plane
   m_TagString: Ground
   m_Icon: {fileID: 0}
@@ -527,6 +527,10 @@ MonoBehaviour:
   jump: {fileID: 0}
   mesh: {fileID: 0}
   anim: {fileID: 381346365}
+  col: {fileID: 381346361}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 512
   cam: {fileID: 1344377805}
   animatorParameters: {fileID: 11400000, guid: dd729103250cb03459869e9b92f76f31, type: 2}
 --- !u!95 &381346365 stripped

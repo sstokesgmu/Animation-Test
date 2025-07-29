@@ -42,6 +42,8 @@ public class Controller : MonoBehaviour
     public Animator anim;
     //? Question What other stuff will the animator access, I want to put it in it's own class: Access Input, current direction, and ...
 
+    public Collider col;
+    public LayerMask groundLayer;
 
     public CinemachineCamera cam;
 
@@ -132,9 +134,13 @@ public class Controller : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-
+        if(_playerMovement.IsGrounded(col, groundLayer))
+            Debug.Log("Player is graounded");
+        else
+            Debug.Log("Player is In the air");
+    
         _playerMovement.HandleMove(
-            _playerMovement.GetInputVector(move.action.ReadValue<Vector2>())
+            _playerMovement.GetInputVector(move.action.ReadValue<Vector2>()), anim.velocity.magnitude
         );
         //HandleMovement();
         //Rotation Handling 
@@ -143,7 +149,9 @@ public class Controller : MonoBehaviour
         groundedGraph.Update();
         //Movement Handling 
         Vector3 res = DrawCameraRay();
+
     }
+
 
     Vector3 DrawCameraRay()
     {
@@ -209,56 +217,3 @@ public interface IControllable
         //     //Debug.Log(transform.rotation);
         // }
 
-
-public class MovmementBase : MonoBehaviour, IMovement
-{
-    public enum MovementType {RootMotion, RigidBodyMotion, TransformTranslate}
-    //TODO Scriptable Object for properties like movment Speed, jump height
-    [SerializeField] protected MovementType MoveType = MovementType.RootMotion;
-    public Vector3 LastLookDirection { get; set; } //! the last move direction will be the last look direction
-    
-
-    public virtual void RotateTowards(Vector3 rotationVec)
-    {
-
-        Debug.LogWarning("Root Motion Move");
-        if(rotationVec != LastLookDirection)
-        {
-            LastLookDirection = rotationVec;
-            float angle = Mathf.Atan2(rotationVec.x, rotationVec.z) * Mathf.Rad2Deg;
-            transform.rotation = Quaternion.Euler(0, angle, 0);
-        }
-    }
-    public virtual void Move_TrasformTranslate(Vector3 moveVec, float magnitude)
-    {
-        transform.Translate(moveVec * Time.deltaTime);
-
-
-    }
-    public virtual void RigidBody_Move(Vector3 moveVec, Rigidbody rb, float force)
-    {
-        rb.AddForce(moveVec * force, ForceMode.Force);
-    }
-    public virtual void HandleMove(Vector3 moveVec)
-    {
-        //Debug.Log($"Input Vector {moveVec}");
-        moveVec.Normalize();
-
-        if(moveVec == Vector3.zero) return;
-
-        switch(MoveType)
-        {
-            case MovementType.RootMotion:
-                RotateTowards(moveVec);
-                break;
-            case MovementType.RigidBodyMotion:
-                RotateTowards(moveVec);
-                RigidBody_Move(moveVec, GetComponent<Rigidbody>(), 10f);
-                break;
-            case MovementType.TransformTranslate:
-                RotateTowards(moveVec);
-                Move_TrasformTranslate(moveVec, 10f);
-                break;
-        }
-    }
-}

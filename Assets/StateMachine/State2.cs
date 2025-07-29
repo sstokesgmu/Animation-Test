@@ -243,7 +243,7 @@ namespace Locomotion_States
     {
         public void Enter()
         {
-            Debug.Log("IsGrounded: Entering grounded state");
+            //Debug.Log("IsGrounded: Entering grounded state");
             NotifyStateChange("Grounded");
         }
 
@@ -254,7 +254,7 @@ namespace Locomotion_States
 
         public void Exit()
         {
-            Debug.Log("IsGrounded: Exiting grounded state");
+           // Debug.Log("IsGrounded: Exiting grounded state");
         }
     }
 
@@ -344,7 +344,7 @@ namespace Locomotion_States
         }
         public void Exit()
         {
-            Debug.Log("Exiting the Running State");
+           // Debug.Log("Exiting the Running State");
             if (animator.GetBool(runningHash))
                 animator.SetBool(runningHash, false);
         }
