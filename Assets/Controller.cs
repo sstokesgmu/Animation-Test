@@ -42,7 +42,6 @@ public class Controller : MonoBehaviour
     public Animator anim;
     //? Question What other stuff will the animator access, I want to put it in it's own class: Access Input, current direction, and ...
 
-    private Vector3 inputVectorRef;
 
     public CinemachineCamera cam;
 
@@ -50,15 +49,14 @@ public class Controller : MonoBehaviour
     private Rigidbody rb;
     
 
-    private Vector3 lastLookDirection;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
 
-    Vector2 input;
-    bool isWalking;
-    bool isRunning;
 
-    private StateData<Controller> controllerData;
-    private StateMachine stateMachine;
+    bool hasMovmentInput;
+    bool hasRunInput;
+
+
+    //private StateMachine stateMachine;
 
     private Node isGrounded;
     private Node isInAir;
@@ -74,76 +72,60 @@ public class Controller : MonoBehaviour
         move.action.performed += context =>
         {
             //Debug.Log($"{context.action} performed, value as object {context.ReadValueAsObject()}");
-            input = context.ReadValue<Vector2>();
-            isWalking = input.x != 0 || input.y != 0;
+            Vector2 input = context.ReadValue<Vector2>();
+            hasMovmentInput = input.x != 0 || input.y != 0;
         };
         move.action.canceled += context =>
         {
-            input = Vector2.zero;
-            isWalking = false;
+            Vector2 input = Vector2.zero;
+            hasMovmentInput = false;
         };
-        sprint.action.performed += context => isRunning = context.ReadValueAsButton();
+        sprint.action.performed += context => hasRunInput = context.ReadValueAsButton();
+        sprint.action.canceled += context => hasRunInput = false;
 
-        controllerData = new StateData<Controller>(this, animatorParameters);
+       // controllerData = new StateData<Controller>(this, animatorParameters);
         _playerMovement = GetComponent<PlayerMovement>();
-    }
 
 
-        // void HandleMovement()
-    // {
-    //     //ToDo: Do this on awake,   Maybe animation priority?
-    //     bool walkingFound = animatorParameters.Parameters.TryGetValue("isWalking", out int walkingHash);
-    //     bool runningFound = animatorParameters.Parameters.TryGetValue("isRunning", out int runningHash);
 
+        isGrounded = new Node(null, "isGrounded", new IsGrounded());
 
-    //     if (walkingFound || runningFound)
-    //     {
-    //         bool isAnimInWalkingState = anim.GetBool(walkingHash);
-    //         bool isAnimInRunningState = anim.GetBool(runningHash);
+        bool isWalkingAnimParamFound = animatorParameters.Parameters.TryGetValue("isWalking", out int walkingHash);
+        bool isRunningAnumParamFound = animatorParameters.Parameters.TryGetValue("isRunning", out int runningHash);
 
-    //         //!Is walking and is running is the input bool values;
+        if(!isWalkingAnimParamFound)
+        {
+            Debug.LogWarning("The animation parameter for walking was not found");
+            //TODO: Do something in this case
+        }
 
+        if(!isRunningAnumParamFound) 
+        {
+            Debug.LogError("The animation parameter for running was not found");
+            //TODO: Do something in this case
+        }
 
-    //         //Start Walking if already not walking
-    //         if (isWalking == true && isAnimInWalkingState == false)
-    //             anim.SetBool(walkingHash, true);
-    //         //Stop Walking
-    //         if (isWalking == false && isAnimInWalkingState == true)
-    //             anim.SetBool(walkingHash, false);
-
-    //         if ((isWalking && isRunning) && !isAnimInRunningState)
-    //             anim.SetBool(runningHash, true);
-
-    //         if ((!isWalking && !isRunning) && isAnimInRunningState)
-    //             anim.SetBool(runningHash, false);
-    //         if ((isWalking && !isRunning) && isAnimInRunningState)
-    //             anim.SetBool(runningHash, false);
-    //     }
-    //     else
-    //     {
-    //         Debug.LogWarning($"Parameter  not found in " + animatorParameters.name);
-    //         //Todo Handle graceful exception
-    //     }
-    // }
-
-
-    void Start()
-    {
-
-        isGrounded = new Node(null, "isGrounded", new IsGrounded());    
-        Node WalkNode = new Node(isGrounded, "Walk", new Walk());
-        Node RunNode = new Node(isGrounded, "Run", new Run());
+        //? What is the minimal state for a basic character to be in 
+        Node WalkNode = new Node(isGrounded, "Walk", new Walk(anim,walkingHash));
+        Node RunNode = new Node(isGrounded, "Run", new Run(anim, runningHash));
         //! Input -> Game State -> Animation 
         groundedGraph = GraphBuilder.Create(isGrounded)
                     .AddChild(isGrounded, WalkNode, "Walk")
-                        //! GetInputVector is a Data Provider Function
-                        .AddTransition(isGrounded, WalkNode, (param) => param != Vector3.zero, () => GetInputVector())
-                        .DescendToChild(isGrounded, "Walk")
-                            .AddTransition(WalkNode, isGrounded, (param) => param == Vector3.zero, () => GetInputVector())
-                        .Generate();
-
+                        .AddTransition(isGrounded, WalkNode, () => hasMovmentInput)
+                        .AddTransition(WalkNode, isGrounded, () => !hasMovmentInput)
+                        .AddTransition(WalkNode, RunNode, () => hasRunInput)
+                    .AddChild(isGrounded, RunNode, "Run")
+                        .AddTransition(isGrounded, RunNode, () => hasMovmentInput && hasRunInput)
+                        .AddTransition(RunNode, isGrounded, () => !hasRunInput && !hasMovmentInput)
+                        .AddTransition(RunNode, WalkNode, () => !hasRunInput)
+                            .Generate();
         groundedGraph.root = isGrounded;
+    }
+    void Start()
+    {
 
+        
+    
 
 
     }
@@ -191,29 +173,6 @@ public class Controller : MonoBehaviour
         }
         return Vector3.zero;
     }
-
-
-    Vector3 GetInputVector()
-    {
-        // 1) Flatten camera forward/right to XZ plane
-        Transform camT = Camera.main.transform;
-        Vector3 camForward = camT.forward;
-        camForward.y = 0f;
-        camForward.Normalize();
-
-        Vector3 camRight = camT.right;
-        camRight.y = 0f;
-        camRight.Normalize();
-
-        // 2) Read raw 2D input (x = A/D or left stick X, y = W/S or left stick Y)
-        Vector2 input2D = move.action.ReadValue<Vector2>();
-
-        // 3) Build world‑space move vector
-        Vector3 worldMove = camForward * input2D.y + camRight * input2D.x;
-
-        return worldMove;
-    }
-
 }
 
 

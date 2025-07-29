@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using System;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.Lumin;
 
 using static StateEvents;
 
@@ -132,11 +130,14 @@ namespace GraphHelper{
                 if (currentNode == null)
                     currentNode = root;
 
+                
+
                 //! Now this op seems to only work on transitions inside graphs (node to node) but not graph to graph 
                 Node nextNode = currentNode?.GetNextNode();
                 if (nextNode != null && nextNode != currentNode)
                 {
-//                    Debug.Log($"Transitioning from {currentNode.name} to {nextNode.name}");
+                    (currentNode.value as IStatable)?.Exit();
+                    //Debug.Log($"Transitioning from {currentNode.name} to {nextNode.name}");
                     currentNode = nextNode;
                     (currentNode.value as IStatable)?.Enter();
                 }
@@ -236,93 +237,118 @@ namespace GraphHelper{
     } 
 }
 
-namespace Locomotion_States {
-    public class IsGrounded: IStatable
+namespace Locomotion_States
 {
-    public void Enter()
+    public class IsGrounded : IStatable
     {
-        Debug.Log("IsGrounded: Entering grounded state");
-        NotifyStateChange("Grounded");
-    }
-    
-    public void Execute()
-    {
-        Debug.Log("IsGrounded: Executing grounded state logic");
-    }
-    
-    public void Exit()
-    {
-        Debug.Log("IsGrounded: Exiting grounded state");
-    }
-}
-
-public class IsInAir : IStatable
-{
-    public void Enter()
-    {
-        Debug.Log("IsInAir: Entering in-air state");
-    }
-
-    public void Execute()
-    {
-        Debug.Log("IsInAir: Executing in-air state logic");
-    }
-
-    public void Exit()
-    {
-        Debug.Log("IsInAir: Exiting in-air state");
-    }
-}
-
-public class Idle : IStatable
-{
-    
-    public void Enter()
-    {
-        Debug.Log("Entering the Idle State");
-    }
-    public void Execute()
-    {
-        Debug.Log("Executing inside the Idle State");
-    }
-
-    public void Exit()
-    {
-        Debug.Log("Exiting the Idle State");
-    }
-}
-
-public class Walk : IStatable
-{
-    public void Enter()
-    {
-            NotifyStateChange("Walking");
+        public void Enter()
+        {
+            Debug.Log("IsGrounded: Entering grounded state");
+            NotifyStateChange("Grounded");
         }
-    public void Execute()
+
+        public void Execute()
+        {
+            Debug.Log("IsGrounded: Executing grounded state logic");
+        }
+
+        public void Exit()
+        {
+            Debug.Log("IsGrounded: Exiting grounded state");
+        }
+    }
+
+    public class IsInAir : IStatable
+    {
+        public void Enter()
+        {
+            Debug.Log("IsInAir: Entering in-air state");
+        }
+
+        public void Execute()
+        {
+            Debug.Log("IsInAir: Executing in-air state logic");
+        }
+
+        public void Exit()
+        {
+            Debug.Log("IsInAir: Exiting in-air state");
+        }
+    }
+
+    public class Idle : IStatable
     {
 
+        public void Enter()
+        {
+            Debug.Log("Entering the Idle State");
+        }
+        public void Execute()
+        {
+            Debug.Log("Executing inside the Idle State");
+        }
+
+        public void Exit()
+        {
+            Debug.Log("Exiting the Idle State");
+        }
     }
-    public void Exit()
+
+    public class Walk : IStatable
     {
 
-    }
-}
+        private Animator animator;
+        private int walkingHash;
 
-public class Run : IStatable
-{
-    public void Enter()
-    {
-        Debug.Log("Entering the Run State");
+        public Walk(Animator anim, int walkHash)
+        {
+            animator = anim;
+            walkingHash = walkHash;
+        }
+
+        public void Enter()
+        {
+            NotifyStateChange("Walking");
+            if (!animator.GetBool(walkingHash))
+                animator.SetBool(walkingHash, true);
+        }
+        public void Execute()
+        {
+
+        }
+        public void Exit()
+        {
+            if (animator.GetBool(walkingHash))
+                animator.SetBool(walkingHash, false);
+        }
     }
-    public void Execute()
+
+    public class Run : IStatable
     {
-        Debug.Log("Executing the Running State");
+        private Animator animator;
+        private int runningHash;
+        public Run(Animator anim, int runHash)
+        {
+            animator = anim;
+            runningHash = runHash;
+        }
+        public void Enter()
+        {
+            NotifyStateChange("Run");
+            if (!animator.GetBool(runningHash))
+                animator.SetBool(runningHash, true);
+        }
+        public void Execute()
+        {
+            Debug.Log("Executing the Running State");
+        }
+        public void Exit()
+        {
+            Debug.Log("Exiting the Running State");
+            if (animator.GetBool(runningHash))
+                animator.SetBool(runningHash, false);
+        }
     }
-    public void Exit()
-    {
-        Debug.Log("Exiting the Running State");
-    }
-}
 }
 
 
