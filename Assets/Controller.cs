@@ -48,7 +48,7 @@ public class Controller : MonoBehaviour
     public CinemachineCamera cam;
 
     public AnimatorParameters animatorParameters;
-    private Rigidbody rb;
+    public Rigidbody rb;
     
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -65,6 +65,7 @@ public class Controller : MonoBehaviour
 
     private Graph groundedGraph;
     private PlayerMovement _playerMovement;
+    private float lastFrameY; // You'd need this one reference
 
 
 
@@ -134,11 +135,19 @@ public class Controller : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        if(_playerMovement.IsGrounded(col, groundLayer))
-            Debug.Log("Player is graounded");
-        else
-            Debug.Log("Player is In the air");
+        // if(_playerMovement.IsGrounded(col, groundLayer))
+        //     Debug.Log("Player is graounded");
+        // else
+        //     Debug.Log("Player is In the air");
+         float currentY = transform.position.y;
+        float verticalVelocity = (currentY - lastFrameY) / Time.fixedDeltaTime;
     
+        if (verticalVelocity > 0.1f)
+            Debug.Log("Jumping");
+        else if (verticalVelocity < -0.1f)
+            Debug.Log("Falling");
+        
+        lastFrameY = currentY; // Store for next frame
         _playerMovement.HandleMove(
             _playerMovement.GetInputVector(move.action.ReadValue<Vector2>()), anim.velocity.magnitude
         );

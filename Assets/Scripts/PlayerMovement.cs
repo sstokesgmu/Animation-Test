@@ -1,5 +1,6 @@
 using Unity.VisualScripting.FullSerializer;
 using UnityEditor.Rendering;
+using UnityEditor.ShaderGraph.Internal;
 using UnityEditor.XR;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -104,6 +105,7 @@ public class MovmementBase : MonoBehaviour, IMovement, IGrounded
 public interface IGrounded 
 {
     public bool IsGrounded<T>(T obj,LayerMask groundLayer) where T:Object;
+    
 }
 
 public class PlayerMovement : MovmementBase
@@ -114,6 +116,9 @@ public class PlayerMovement : MovmementBase
 
     public override void HandleMove(Vector3 moveVec, float velocity)
     {
+        // float y = transform.position.y;
+        // Debug.Log($"The y is {y}");
+
         base.HandleMove(moveVec, velocity);
     }
 
