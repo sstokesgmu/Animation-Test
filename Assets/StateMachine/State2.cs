@@ -67,7 +67,7 @@ namespace GraphHelper{
             {
                 if (possibleTrans.condition())
                 {
-                    Debug.Log($"Transition condition met: {possibleTrans.targetNode.name}");
+                    //Debug.Log($"Transition condition met: {possibleTrans.targetNode.name}");
 
                     //Go to the next transition seen that to the graph/StateMachine 
                    return possibleTrans.targetNode;
@@ -136,7 +136,7 @@ namespace GraphHelper{
                 Node nextNode = currentNode?.GetNextNode();
                 if (nextNode != null && nextNode != currentNode)
                 {
-                    Debug.Log($"Transitioning from {currentNode.name} to {nextNode.name}");
+//                    Debug.Log($"Transitioning from {currentNode.name} to {nextNode.name}");
                     currentNode = nextNode;
                     (currentNode.value as IStatable)?.Enter();
                 }
@@ -328,6 +328,7 @@ public class Run : IStatable
 
 public interface IStatable
 {
+    
     void Enter();
     void Execute();
     void Exit();
