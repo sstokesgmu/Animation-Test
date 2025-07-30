@@ -94,14 +94,14 @@ public class MovmementBase : MonoBehaviour, IMovement, IGrounded
         }
         return Physics.Raycast(checkPosition, Vector3.down, 0.1f, groundLayer);
     }
-
 }
 
 
 public interface IGrounded 
 {
-    public bool IsGrounded<T>(T obj,LayerMask groundLayer) where T:Object;
     
+    //Checks where the feet of the player character is
+    public bool IsGrounded<T>(T obj,LayerMask groundLayer) where T:Object;
 }
 
 public class PlayerMovement : MovmementBase
@@ -129,7 +129,9 @@ public class PlayerMovement : MovmementBase
 
     public void Jump()
     {
-        Debug.Log("Jumping");
+        bool isRootMotionActive = this.GetComponent<Animator>().applyRootMotion = false; 
+        Rigidbody rb = this.GetComponent<Rigidbody>();
+        rb.AddForce(Vector3.up * 10f, ForceMode.Impulse);
     }
 
 

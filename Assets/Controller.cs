@@ -9,6 +9,8 @@ using System.Reflection;
 using System;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine.Rendering;
+using UnityEditor.Rendering.LookDev;
+using System.IO.Pipes;
 //-------------------------------------------------------------------
 /*
     Base Class for player and enemies
@@ -54,8 +56,9 @@ public class Controller : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
 
 
-    bool hasMovmentInput;
+    bool hasMovementInput;
     bool hasRunInput;
+    bool hasJumpInput;
 
 
     //private StateMachine stateMachine;
@@ -76,51 +79,78 @@ public class Controller : MonoBehaviour
         {
             //Debug.Log($"{context.action} performed, value as object {context.ReadValueAsObject()}");
             Vector2 input = context.ReadValue<Vector2>();
-            hasMovmentInput = input.x != 0 || input.y != 0;
+            hasMovementInput = input.x != 0 || input.y != 0;
         };
         move.action.canceled += context =>
         {
             Vector2 input = Vector2.zero;
-            hasMovmentInput = false;
+            hasMovementInput = false;
         };
         sprint.action.performed += context => hasRunInput = context.ReadValueAsButton();
         sprint.action.canceled += context => hasRunInput = false;
 
-       // controllerData = new StateData<Controller>(this, animatorParameters);
+        jump.action.performed += context => hasJumpInput = context.ReadValueAsButton();
+        jump.action.canceled += context => hasJumpInput = false;
+
+        // controllerData = new StateData<Controller>(this, animatorParameters);
         _playerMovement = GetComponent<PlayerMovement>();
+
+
+
+        // //! Do we need this 
+        bool isGroundedPramaFound = animatorParameters.Parameters.TryGetValue("isGrounded", out int groundedHash);
+        bool isWalkingAnimParamFound = animatorParameters.Parameters.TryGetValue("isWalking", out int walkingHash);
+        bool isRunningAnimParamFound = animatorParameters.Parameters.TryGetValue("isRunning", out int runningHash);
+        bool isJumpingAnimParamFound = animatorParameters.Parameters.TryGetValue("TriggerJump", out int jumpHash);
+
+        // if(!isWalkingAnimParamFound)
+        // {
+        //     Debug.LogWarning("The animation parameter for walking was not found");
+        //     //TODO: Do something in this case
+        // }
+
+        // if(!isRunningAnumParamFound) 
+        // {
+        //     Debug.LogError("The animation parameter for running was not found");
+        //     //TODO: Do something in this case
+        // }
 
 
 
         isGrounded = new Node(null, "isGrounded", new IsGrounded());
 
-        bool isWalkingAnimParamFound = animatorParameters.Parameters.TryGetValue("isWalking", out int walkingHash);
-        bool isRunningAnumParamFound = animatorParameters.Parameters.TryGetValue("isRunning", out int runningHash);
+        //Idles
 
-        if(!isWalkingAnimParamFound)
-        {
-            Debug.LogWarning("The animation parameter for walking was not found");
-            //TODO: Do something in this case
-        }
-
-        if(!isRunningAnumParamFound) 
-        {
-            Debug.LogError("The animation parameter for running was not found");
-            //TODO: Do something in this case
-        }
+        Node idleGrounded = new Node(isGrounded, "Idle-Grounded", new Idle(anim, groundedHash));
+        Node idleInAir = new Node(isGrounded, "Idle-InAir", new Air_Idle(anim, groundedHash));
 
         //? What is the minimal state for a basic character to be in 
         Node WalkNode = new Node(isGrounded, "Walk", new Walk(anim,walkingHash));
         Node RunNode = new Node(isGrounded, "Run", new Run(anim, runningHash));
+        Node JumpNode = new Node(idleGrounded, "Jump-Grounded", new Jump(anim, jumpHash));
+
+
         //! Input -> Game State -> Animation 
         groundedGraph = GraphBuilder.Create(isGrounded)
-                    .AddChild(isGrounded, WalkNode, "Walk")
-                        .AddTransition(isGrounded, WalkNode, () => hasMovmentInput)
-                        .AddTransition(WalkNode, isGrounded, () => !hasMovmentInput)
-                        .AddTransition(WalkNode, RunNode, () => hasRunInput)
-                    .AddChild(isGrounded, RunNode, "Run")
-                        .AddTransition(isGrounded, RunNode, () => hasMovmentInput && hasRunInput)
-                        .AddTransition(RunNode, isGrounded, () => !hasRunInput && !hasMovmentInput)
-                        .AddTransition(RunNode, WalkNode, () => !hasRunInput)
+                    .AddChild(isGrounded, idleGrounded, "Idle-Grounded")
+                    .AddChild(isGrounded, idleInAir, "Idle - Air")
+                    .AddTransition(isGrounded, idleGrounded, () => _playerMovement.IsGrounded(col, groundLayer) == true)
+                    .AddTransition(idleGrounded, isGrounded, () => _playerMovement.IsGrounded(col, groundLayer) == false)
+                        .AddChild(idleGrounded, WalkNode, "Walk")
+                            .AddTransition(idleGrounded, WalkNode, () => hasMovementInput)
+                            .AddTransition(WalkNode, idleGrounded, () => !hasMovementInput)
+                            .AddTransition(WalkNode, RunNode, () => hasRunInput)
+                        .AddChild(idleGrounded, RunNode, "Run")
+                            .AddTransition(idleGrounded, RunNode, () => hasMovementInput && hasRunInput)
+                            .AddTransition(RunNode, WalkNode, () => !hasRunInput)
+                            .AddTransition(RunNode, idleGrounded, () => !hasRunInput && !hasMovementInput)
+                        .AddChild(idleGrounded, JumpNode, "Jump")
+                            .AddTransition(idleGrounded, JumpNode, () => hasJumpInput)
+                            .AddTransition(WalkNode,JumpNode, () => hasJumpInput)
+                            .AddTransition(RunNode,JumpNode, () => hasJumpInput)  
+                            .AddTransition(JumpNode,idleInAir, () => true)
+                    .AddTransition(idleInAir, isGrounded, () => _playerMovement.IsGrounded(col, groundLayer) == true)
+                    .AddTransition(isGrounded, idleInAir, () => _playerMovement.IsGrounded(col, groundLayer) == false)
                             .Generate();
         groundedGraph.root = isGrounded;
     }
@@ -135,15 +165,21 @@ public class Controller : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+        
         // if(_playerMovement.IsGrounded(col, groundLayer))
+
         //     Debug.Log("Player is graounded");
         // else
         //     Debug.Log("Player is In the air");
-         float currentY = transform.position.y;
-        float verticalVelocity = (currentY - lastFrameY) / Time.fixedDeltaTime;
+        // float currentY = transform.position.y;
+        // float verticalVelocity = (currentY - lastFrameY) / Time.fixedDeltaTime;
     
+        // if (verticalVelocity > 0.1f)
+        //     Debug.Log("Jumping");
+        // else if (verticalVelocity < -0.1f)
+        //     Debug.Log("Falling");
         
-        lastFrameY = currentY; // Store for next frame
+        // lastFrameY = currentY; // Store for next frame
         _playerMovement.HandleMove(
             _playerMovement.GetInputVector(move.action.ReadValue<Vector2>()), anim.velocity.magnitude
         );

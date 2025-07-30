@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.Events;
 
 using static StateEvents;
+using UnityEditor;
+using UnityEngine.Rendering;
 
 
 namespace GraphHelper{
@@ -242,10 +244,14 @@ namespace Locomotion_States
 {
     public class IsGrounded : IStatable
     {
+
+    
+
+
         public void Enter()
         {
             //Debug.Log("IsGrounded: Entering grounded state");
-            NotifyStateChange("Grounded");
+
         }
 
         public void Execute()
@@ -259,30 +265,22 @@ namespace Locomotion_States
         }
     }
 
-    public class IsInAir : IStatable
-    {
-        public void Enter()
-        {
-            Debug.Log("IsInAir: Entering in-air state");
-        }
-
-        public void Execute()
-        {
-            Debug.Log("IsInAir: Executing in-air state logic");
-        }
-
-        public void Exit()
-        {
-            Debug.Log("IsInAir: Exiting in-air state");
-        }
-    }
-
     public class Idle : IStatable
     {
+        public Animator animator;
+        public int idleHash;
+
+        public Idle(Animator anim, int groundedHash)
+        {
+            animator = anim;
+            idleHash = groundedHash;
+        }
 
         public void Enter()
         {
-            Debug.Log("Entering the Idle State");
+            NotifyStateChange("Idle-Grounded");
+            if(!animator.GetBool(idleHash))
+                animator.SetBool(idleHash, true);
         }
         public void Execute()
         {
@@ -291,7 +289,39 @@ namespace Locomotion_States
 
         public void Exit()
         {
-            Debug.Log("Exiting the Idle State");
+            Debug.Log("Exiting the Idle Grounded State");
+            if(animator.GetBool(idleHash))
+                animator.SetBool(idleHash, false);
+        }
+    }
+
+    public class Air_Idle : IStatable
+    {
+        private Animator animator;
+        private int idleHash;
+
+        public Air_Idle(Animator anim, int groundedHash)
+        {
+            animator = anim;
+            idleHash = groundedHash;
+        }
+
+        public void Enter()
+        {
+            NotifyStateChange("Idle - In Air");
+            Debug.Log("Entering the Idle Air State");
+            if(!animator.GetBool(idleHash))
+                animator.SetBool(idleHash, false);
+        }
+        public void Execute()
+        {
+
+        }
+        public void Exit()
+        {
+            Debug.Log("Exiting the Idle Air State");
+            if(!animator.GetBool(idleHash))
+                animator.SetBool(idleHash, true);
         }
     }
 
@@ -348,6 +378,31 @@ namespace Locomotion_States
            // Debug.Log("Exiting the Running State");
             if (animator.GetBool(runningHash))
                 animator.SetBool(runningHash, false);
+        }
+    }
+
+    public class Jump: IStatable{
+        private Animator animator;
+        private int runningHash;
+        public Jump(Animator anim, int runHash)
+        {
+            animator = anim;
+            runningHash = runHash;
+        }
+
+        public void Enter()
+        {
+            NotifyStateChange("Jump");
+            animator.SetTrigger(runningHash);
+        }
+
+        public void Execute()
+        {
+
+        }
+        public void Exit()
+        {
+            animator.ResetTrigger(runningHash);
         }
     }
 }
