@@ -142,10 +142,6 @@ public class Controller : MonoBehaviour
          float currentY = transform.position.y;
         float verticalVelocity = (currentY - lastFrameY) / Time.fixedDeltaTime;
     
-        if (verticalVelocity > 0.1f)
-            Debug.Log("Jumping");
-        else if (verticalVelocity < -0.1f)
-            Debug.Log("Falling");
         
         lastFrameY = currentY; // Store for next frame
         _playerMovement.HandleMove(

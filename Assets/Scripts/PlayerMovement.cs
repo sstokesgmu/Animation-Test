@@ -1,9 +1,5 @@
-using Unity.VisualScripting.FullSerializer;
-using UnityEditor.Rendering;
-using UnityEditor.ShaderGraph.Internal;
-using UnityEditor.XR;
 using UnityEngine;
-using UnityEngine.Rendering;
+using UnityEngine.Events;
 
 
 
@@ -16,7 +12,6 @@ public class MovmementBase : MonoBehaviour, IMovement, IGrounded
     //TODO Scriptable Object for properties like movment Speed, jump height
     [SerializeField] protected MovementType MoveType = MovementType.RootMotion;
     public Vector3 LastLookDirection { get; set; } //! the last move direction will be the last look direction    
-
     public virtual void RotateTowards(Vector3 rotationVec)
     {
         if(rotationVec != LastLookDirection)
@@ -99,6 +94,7 @@ public class MovmementBase : MonoBehaviour, IMovement, IGrounded
         }
         return Physics.Raycast(checkPosition, Vector3.down, 0.1f, groundLayer);
     }
+
 }
 
 
@@ -130,6 +126,13 @@ public class PlayerMovement : MovmementBase
         lastInput = input;
         return isSharpTurn;
     }
+
+    public void Jump()
+    {
+        Debug.Log("Jumping");
+    }
+
+
     public Vector3 GetInputVector(Vector2 input)
     {
         this.input = input;
@@ -145,5 +148,7 @@ public class PlayerMovement : MovmementBase
         //2: Build world-space move vector
         return camForward * input.y + camRight * input.x;
     }
+
+
 
 }
