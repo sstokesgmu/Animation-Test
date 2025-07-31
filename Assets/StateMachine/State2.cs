@@ -183,7 +183,7 @@ namespace GraphHelper{
         } 
         public IGraphBuilder AddChild(Node parent, Node child, string childName)
         {
-            Debug.Log($"Adding the child name {childName}");
+            // Debug.Log($"Adding the child name {childName}");
             currentNode.children.Add(childName, child);
             this.currentNode = parent;
 
@@ -289,7 +289,7 @@ namespace Locomotion_States
 
         public void Exit()
         {
-            Debug.Log("Exiting the Idle Grounded State");
+            //Debug.Log("Exiting the Idle Grounded State");
             if(animator.GetBool(idleHash))
                 animator.SetBool(idleHash, false);
         }
@@ -309,7 +309,7 @@ namespace Locomotion_States
         public void Enter()
         {
             NotifyStateChange("Idle - In Air");
-            Debug.Log("Entering the Idle Air State");
+         //   Debug.Log("Entering the Idle Air State");
             if(!animator.GetBool(idleHash))
                 animator.SetBool(idleHash, false);
         }
@@ -319,7 +319,7 @@ namespace Locomotion_States
         }
         public void Exit()
         {
-            Debug.Log("Exiting the Idle Air State");
+           // Debug.Log("Exiting the Idle Air State");
             if(!animator.GetBool(idleHash))
                 animator.SetBool(idleHash, true);
         }
@@ -384,16 +384,26 @@ namespace Locomotion_States
     public class Jump: IStatable{
         private Animator animator;
         private int runningHash;
-        public Jump(Animator anim, int runHash)
+        private PlayerMovement playerMovement;
+        
+        public Jump(Animator anim, int runHash, PlayerMovement playerMov = null)
         {
             animator = anim;
             runningHash = runHash;
+            playerMovement = playerMov;
         }
 
         public void Enter()
         {
             NotifyStateChange("Jump");
             animator.SetTrigger(runningHash);
+            
+            // Call the actual jump physics
+            if (playerMovement != null)
+            {
+                playerMovement.Jump();
+                Debug.Log("Jump state triggered PlayerMovement.Jump()");
+            }
         }
 
         public void Execute()

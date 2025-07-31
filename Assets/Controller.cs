@@ -147,7 +147,7 @@ public class Controller : MonoBehaviour
                         .AddChild(idleGrounded, JumpNode, "Jump")
                             .AddTransition(idleGrounded, JumpNode, () => hasJumpInput)
                             .AddTransition(WalkNode,JumpNode, () => hasJumpInput)
-                            .AddTransition(RunNode,JumpNode, () => hasJumpInput)  
+                            .AddTransition(RunNode,JumpNode, () => hasJumpInput)
                             .AddTransition(JumpNode,idleInAir, () => true)
                     .AddTransition(idleInAir, isGrounded, () => _playerMovement.IsGrounded(col, groundLayer) == true)
                     .AddTransition(isGrounded, idleInAir, () => _playerMovement.IsGrounded(col, groundLayer) == false)
@@ -187,6 +187,14 @@ public class Controller : MonoBehaviour
         //Rotation Handling 
 
         //Todo: State Machine Class
+        
+        // Debug current state and jump input
+        if (hasJumpInput)
+        {
+            Debug.Log($"Jump input detected! Current state: {groundedGraph.currentNode?.name}");
+            Debug.Log($"IsGrounded check: {_playerMovement.IsGrounded(col, groundLayer)}");
+        }
+        
         groundedGraph.Update();
         //Movement Handling 
         Vector3 res = DrawCameraRay();

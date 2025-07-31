@@ -1,11 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-
-
-
-
-
 public class MovmementBase : MonoBehaviour, IMovement, IGrounded
 {
     public enum MovementType {RootMotion, RigidBodyMotion, TransformTranslate}
@@ -72,11 +67,14 @@ public class MovmementBase : MonoBehaviour, IMovement, IGrounded
     public virtual bool IsGrounded<T>(T obj, LayerMask groundLayer) where T: UnityEngine.Object
     {
         
-        Vector3 checkPosition; 
+        Vector3 checkPosition;
+        float checkDistance = 0.3f; // Increased to handle animation lift 
 
         if(obj is Collider col)
         {
-            checkPosition = col.bounds.center - new Vector3(0, col.bounds.extents.y, 0);
+            // Start check from slightly above the bottom of the collider
+            checkPosition = col.bounds.center - new Vector3(0, col.bounds.extents.y - 0.1f, 0);
+            Debug.DrawRay(checkPosition, Vector3.down * checkDistance, Color.green, 1.0f);
         }
         else if(obj is GameObject gobj)
         {
@@ -92,7 +90,7 @@ public class MovmementBase : MonoBehaviour, IMovement, IGrounded
             Debug.LogWarning($"Unsuproted Type: {typeof(T)}"); //? Compile Time Info
             return false;
         }
-        return Physics.Raycast(checkPosition, Vector3.down, 0.1f, groundLayer);
+        return Physics.Raycast(checkPosition, Vector3.down, checkDistance, groundLayer);
     }
 }
 
@@ -108,14 +106,20 @@ public class PlayerMovement : MovmementBase
 {
     [SerializeField] private Camera _cam;
     private Vector2 input;
-    private Vector2 lastInput; 
+    private Vector2 lastInput;
+
+    private Vector3 moveVec;
+
+    [SerializeField] private Animator anim;
 
     public override void HandleMove(Vector3 moveVec, float velocity)
     {
         // float y = transform.position.y;
         // Debug.Log($"The y is {y}");
 
+        this.moveVec = moveVec;
         base.HandleMove(moveVec, velocity);
+
     }
 
     public override bool HasSharpTurn()
@@ -129,9 +133,67 @@ public class PlayerMovement : MovmementBase
 
     public void Jump()
     {
-        bool isRootMotionActive = this.GetComponent<Animator>().applyRootMotion = false; 
+        StartCoroutine(JumpCoroutine());
+    }
+
+    private System.Collections.IEnumerator JumpCoroutine()
+    {
+        Debug.Log("=== JUMP STARTED ===");
+        Debug.Log($"moveVec: {moveVec}, magnitude: {moveVec.magnitude}");
+        Debug.Log($"input: {input}, magnitude: {input.magnitude}");
+        
+        // Disable root motion for physics-based jump
+        anim.applyRootMotion = false;
+        
         Rigidbody rb = this.GetComponent<Rigidbody>();
-        rb.AddForce(Vector3.up * 10f, ForceMode.Impulse);
+        Debug.Log($"Rigidbody mass: {rb.mass}, linearDamping: {rb.linearDamping}, useGravity: {rb.useGravity}");
+        
+        // Simple hardcoded diagonal jump
+        float jumpHeight = 15f; // Upward force
+        float forwardForce = 10f; // Forward force
+        
+        Vector3 jumpVector;
+        
+        // If player is moving, jump diagonally forward
+        if (moveVec.magnitude > 0.1f)
+        {
+            // Use the actual movement direction for jump, but ensure strong upward force
+            jumpVector = new Vector3(
+                moveVec.normalized.x * forwardForce,  // Forward in movement direction
+                jumpHeight,                           // Strong upward force
+                moveVec.normalized.z * forwardForce   // Forward in movement direction
+            );
+            Debug.Log($"Diagonal jump applied: horizontal={forwardForce}, vertical={jumpHeight}");
+        }
+        else
+        {
+            // If not moving, jump straight up with extra force
+            float stationaryJumpHeight = jumpHeight * 1.2f; // 20% more force for stationary jump
+            jumpVector = Vector3.up * stationaryJumpHeight;
+            Debug.Log($"Stationary jump applied with force: {stationaryJumpHeight}");
+        }
+        
+        Debug.DrawRay(new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), jumpVector, Color.blue, 2.0f);
+        Debug.Log($"Applying force: {jumpVector} with ForceMode.Impulse");
+        rb.AddForce(jumpVector, ForceMode.Impulse);
+        Debug.Log($"Rigidbody velocity after force: {rb.linearVelocity}");
+        
+        // Wait a short moment to ensure we're airborne
+        yield return new WaitForSeconds(0.1f);
+        
+        // Wait until we're grounded again
+        LayerMask groundLayer = LayerMask.GetMask("Ground"); // Adjust layer name as needed
+        while (!IsGrounded(GetComponent<Collider>(), groundLayer))
+        {
+            yield return new WaitForFixedUpdate();
+        }
+        
+        // Small delay to ensure stable landing
+        yield return new WaitForSeconds(0.1f);
+        
+        // Re-enable root motion once we've landed
+        anim.applyRootMotion = true;
+        Debug.Log("Jump completed - root motion re-enabled");
     }
 
 

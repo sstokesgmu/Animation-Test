@@ -477,7 +477,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 112
@@ -553,6 +553,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MoveType: 0
   _cam: {fileID: 330585545}
+  anim: {fileID: 381346365}
 --- !u!114 &381346367
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -892,7 +893,7 @@ GameObject:
   - component: {fileID: 1277959942}
   - component: {fileID: 1277959941}
   - component: {fileID: 1277959940}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: wall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -981,13 +982,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1277959939}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0.13632399, y: -0.65650797, z: 0.1508376, w: 0.7264028}
   m_LocalPosition: {x: -0.26725, y: 0.85, z: 6.13}
   m_LocalScale: {x: 12.959, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -84.213, z: 23.462}
 --- !u!1 &1344377800
 GameObject:
   m_ObjectHideFlags: 0
