@@ -14,5 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   anim: {fileID: 9100000, guid: c9e1df024aba509488ac5d6041d1ef83, type: 2}
   entries:
+  - isGrounded
   - isWalking
   - isRunning
+  - TriggerJump
